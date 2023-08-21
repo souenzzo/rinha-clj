@@ -2,6 +2,7 @@
   (:require [cheshire.core :as json]
             [io.pedestal.http :as http]
             [io.pedestal.http.body-params :as body-params]
+            [io.pedestal.http.route :as route]
             [io.pedestal.interceptor :as interceptor]
             [clojure.instant :as instant]
             [next.jdbc :as jdbc]
@@ -15,7 +16,9 @@
     (doseq [stack stack]
       (jdbc/execute! conn ["INSERT INTO stack (ident, pessoa) VALUES (?, ?)"
                            stack apelido]))
-    {:status 202}))
+    {:headers {"Location" (route/url-for ::consultar
+                            :params {:id apelido})}
+     :status  201}))
 
 
 (defn consultar
@@ -30,13 +33,30 @@
                json/generate-string)
      :status 200}))
 
+(def query-de-busca
+  "
+  SELECT apelido, nome, nascimento
+ FROM pessoa
+ WHERE (apelido ILIKE ?)
+    OR (nome ILIKE ?)
+    OR (apelido IN (SELECT pessoa
+                    FROM stack
+                    WHERE ident ILIKE ?));
+ ")
 
 (defn buscar
   [{::keys [conn]
-    :as    request}]
-  (let []
-    (jdbc/execute! conn [])
-    {:status 200}))
+    :keys  [query-params]}]
+  (let [{:keys [t]} query-params
+        busca (str "%" t "%")]
+    (if (= busca "%%")
+      {:status 400}
+      {:body   (-> (for [{:keys [apelido nascimento]
+                          :as   pessoa} (jdbc/execute! conn [query-de-busca busca busca busca])]
+                     (assoc pessoa :nascimento (str nascimento)
+                                   :stack (map :ident (jdbc/execute! conn ["SELECT ident FROM stack WHERE pessoa = ? ORDER BY ident" apelido]))))
+                 json/generate-string)
+       :status 200})))
 
 
 (defn contagem-pessoas
