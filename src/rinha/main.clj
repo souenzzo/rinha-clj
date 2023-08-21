@@ -1,4 +1,5 @@
 (ns rinha.main
+  (:gen-class)
   (:require [cheshire.core :as json]
             [io.pedestal.http :as http]
             [io.pedestal.http.body-params :as body-params]
@@ -97,9 +98,10 @@
   [& _]
   (-> {::jdbc-url   (System/getProperty "rinha.jdbc-url"
                       "jdbc:postgres://localhost:5432/postgres?user=postgres&password=postgres")
-       ::http/port  (Long/getLong "rinha.http.port" 8080)
+       ::http/port  (Long/getLong "rinha.http.port" 80)
        ::http/join? false
        ::http/type  :jetty}
     default-interceptors
     http/dev-interceptors
-    http/create-servlet))
+    http/create-server
+    http/start))
