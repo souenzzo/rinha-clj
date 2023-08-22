@@ -1,24 +1,23 @@
 (ns rinha.main
   (:gen-class)
-  (:require [cheshire.core :as json]
-            [io.pedestal.http :as http]
-            [io.pedestal.http.body-params :as body-params]
-            [io.pedestal.http.route :as route]
-            [io.pedestal.interceptor :as interceptor]
-            [clojure.instant :as instant]
-            [next.jdbc :as jdbc]
-            [next.jdbc.result-set :as rs]))
+  (:require
+   [cheshire.core :as json]
+   [clojure.instant :as instant]
+   [io.pedestal.http :as http]
+   [io.pedestal.http.body-params :as body-params]
+   [io.pedestal.http.route :as route]
+   [io.pedestal.interceptor :as interceptor]
+   [next.jdbc :as jdbc]
+   [next.jdbc.result-set :as rs]
+   [rinha.postgres :as postgres]))
 
 (defn criar
   [{::keys [conn] :keys [json-params]}]
   (let [{:keys [apelido nome nascimento stack]} json-params]
     (jdbc/execute! conn ["INSERT INTO pessoa (apelido, nome, nascimento) VALUES (?, ?, ?)"
                          apelido nome (instant/read-instant-timestamp nascimento)])
-    (doseq [stack stack]
-      (jdbc/execute! conn ["INSERT INTO stack (ident, pessoa) VALUES (?, ?)"
-                           stack apelido]))
-    {:headers {"Location" (route/url-for ::consultar
-                            :params {:id apelido})}
+    (postgres/create-many! conn "stack" stack)
+    {:headers {"Location" (route/url-for ::consultar :params {:id apelido})}
      :status  201}))
 
 

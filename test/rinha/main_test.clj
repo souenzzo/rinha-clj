@@ -27,6 +27,12 @@
    "DROP TABLE IF EXISTS pessoa"
    (slurp (io/resource "schema.sql"))])
 
+(defn new-stack
+  [pessoa coll]
+  (mapv (fn [v] {:pessoa pessoa 
+                 :ident v}) 
+        coll))
+
 (deftest hello
   (let [service-fn (setup-database migrations)]
     (is (= 0
@@ -41,7 +47,7 @@
                              :body (json/generate-string {:apelido    "josé"
                                                           :nome       "José Roberto"
                                                           :nascimento "2000-10-01"
-                                                          :stack      ["C#" "Node" "Oracle"]}))
+                                                          :stack      (new-stack "josé" ["C#" "Node" "Oracle"])}))
                :headers
                (get "Location"))))
     (is (= "/pessoas/ana"
@@ -51,7 +57,7 @@
                              :body (json/generate-string {:apelido    "ana"
                                                           :nascimento "1985-09-23"
                                                           :nome       "Ana Barbosa"
-                                                          :stack      ["Node" "Postgres"]}))
+                                                          :stack      (new-stack "ana" ["Node" "Postgres"])}))
                :headers
                (get "Location"))))
     (is (= {:apelido    "josé"
