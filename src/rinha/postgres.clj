@@ -19,11 +19,10 @@
      (map (apply juxt cols) entities)]))
 
 (defn create-many!
-  ([ds table entities] (create-many! {:return-data? false} ds table entities))
-  ([{:keys [return-data?] :as opts}
-    ds table entities]
-   (let [entities' entities
-         [sql values] (build-insert-sql table entities')]
+  ([ds table entities] 
+   (create-many! {:return-data? false} ds table entities))
+  ([{:keys [return-data?]} ds table entities]
+   (let [[sql values] (build-insert-sql table entities)]
      (jdbc/with-transaction [tx ds]
        (try
          (jdbc/execute-batch! tx sql values
