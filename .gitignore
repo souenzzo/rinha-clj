@@ -1,0 +1,34 @@
+.lsp
+lsp
+.DS_Store
+.settings
+.classpath
+.project
+eclipse
+stacktrace.log
+target
+out
+logs
+.clj-kondo/.cache
+
+### Clojure ###
+pom.xml.asc
+*.jar
+*.class
+/lib/
+/classes/
+/target/
+.lein-deps-sum
+.lein-repl-history
+.lein-plugins/
+.lein-failures
+.nrepl-port
+
+# VS Code
+.vscode
+.idea/
+.eastwood
+.calva
+.cpcache
+.clj-kondo/
+.portal
