@@ -12,25 +12,28 @@
 ;; docker run -e POSTGRES_PASSWORD=postgres --rm -p 5432:5432 postgres:alpine
 
 (defn setup-database
-  []
+  [migrations]
   (let [{::rinha/keys [conn]
          ::http/keys  [service-fn]} (-> {::rinha/jdbc-url "jdbc:postgres://localhost:5432/postgres?user=postgres&password=postgres"}
                                         rinha/default-interceptors
                                         http/dev-interceptors
                                         http/create-servlet)]
-    (jdbc/execute! conn ["DROP TABLE IF EXISTS stack"])
-    (jdbc/execute! conn ["DROP TABLE IF EXISTS pessoa"])
-    (jdbc/execute! conn [(slurp (io/resource "schema.sql"))])
+    (doseq [migration migrations]
+      (jdbc/execute! conn [migration]))
     service-fn))
 
+(def ^:private migrations
+  ["DROP TABLE IF EXISTS stack"
+   "DROP TABLE IF EXISTS pessoa"
+   (slurp (io/resource "schema.sql"))])
+
 (deftest hello
-  (let [service-fn (setup-database)]
+  (let [service-fn (setup-database migrations)]
     (is (= 0
            (-> service-fn
                (response-for :get "/contagem-pessoas")
                :body
-               json/parse-string
-               #_(doto clojure.pprint/pprint))))
+               json/parse-string)))
     (is (= "/pessoas/josé"
            (-> service-fn
                (response-for :post "/pessoas"
@@ -40,8 +43,7 @@
                                                           :nascimento "2000-10-01"
                                                           :stack      ["C#" "Node" "Oracle"]}))
                :headers
-               (get "Location")
-               #_(doto clojure.pprint/pprint))))
+               (get "Location"))))
     (is (= "/pessoas/ana"
            (-> service-fn
                (response-for :post "/pessoas"
@@ -51,9 +53,7 @@
                                                           :nome       "Ana Barbosa"
                                                           :stack      ["Node" "Postgres"]}))
                :headers
-               (get "Location")
-               #_(doto clojure.pprint/pprint))))
-
+               (get "Location"))))
     (is (= {:apelido    "josé"
             :nascimento "2000-09-30"
             :nome       "José Roberto"
@@ -61,8 +61,7 @@
            (-> service-fn
                (response-for :get "/pessoas/josé")
                :body
-               (json/parse-string true)
-               #_(doto clojure.pprint/pprint))))
+               (json/parse-string true))))
     (is (= [{:apelido    "josé",
              :nome       "José Roberto",
              :nascimento "2000-09-30",
@@ -74,8 +73,7 @@
            (-> service-fn
                (response-for :get "/pessoas?t=node")
                :body
-               (json/parse-string true)
-               #_(doto clojure.pprint/pprint))))
+               (json/parse-string true))))
     (is (= [{:apelido    "josé",
              :nome       "José Roberto",
              :nascimento "2000-09-30",
@@ -83,22 +81,7 @@
            (-> service-fn
                (response-for :get "/pessoas?t=berto")
                :body
-               (json/parse-string true)
-               #_(doto clojure.pprint/pprint))))
-    (is (= []
-           (-> service-fn
-               (response-for :get "/pessoas?t=Python")
-               :body
-               (json/parse-string true)
-               #_(doto clojure.pprint/pprint))))
-    (is (= 400
-           (-> service-fn
-               (response-for :get "/pessoas")
-               :status
-               #_(doto clojure.pprint/pprint))))
-    (is (= 2
-           (-> service-fn
-               (response-for :get "/contagem-pessoas")
-               :body
-               json/parse-string
-               #_(doto clojure.pprint/pprint))))))
+               (json/parse-string true))))
+    (is (= [] (-> service-fn (response-for :get "/pessoas?t=Python") :body (json/parse-string true))))
+    (is (= 400 (-> service-fn (response-for :get "/pessoas") :status)))
+    (is (= 2 (-> service-fn (response-for :get "/contagem-pessoas") :body json/parse-string)))))
