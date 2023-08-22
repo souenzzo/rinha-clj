@@ -4,6 +4,7 @@
            io.pedestal/pedestal.service      {:mvn/version "0.6.0"}
            org.clojure/tools.nrepl {:mvn/version "0.2.12"}
            org.clojure/clojure               {:mvn/version "1.11.1"}
+           com.github.seancorfield/honeysql {:mvn/version "2.4.1026"}
            org.postgresql/postgresql         {:mvn/version "42.6.0"}
            org.slf4j/slf4j-simple            {:mvn/version "2.0.7"}
            cheshire/cheshire                 {:mvn/version "5.11.0"}}
