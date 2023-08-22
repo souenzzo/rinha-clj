@@ -17,12 +17,8 @@
                                       rinha/default-interceptors
                                       http/dev-interceptors
                                       http/create-servlet)]
-    (try
-      (jdbc/execute! conn ["DROP TABLE stack"])
-      (catch Throwable _ex :ok))
-    (try
-      (jdbc/execute! conn ["DROP TABLE pessoa"])
-      (catch Throwable _ex :ok))
+    (jdbc/execute! conn ["DROP TABLE IF EXISTS stack"])
+    (jdbc/execute! conn ["DROP TABLE IF EXISTS pessoa"])
     (jdbc/execute! conn [(slurp (io/resource "schema.sql"))])
     (is (= 0
           (-> service-fn
